@@ -37,6 +37,14 @@ struct detect_config {
 };
 
 void display_config(struct detect_config* config);
+/**
+ * @brief calculates the number of surronding pixels that fall into the tolerance values set in config
+ * @param frame_buffer_ptr 1920x1080 ycbcr format 4:2:2 where frame_buffer_ptr[even] = cr/Y; framebuffer_ptr[odd] = cb/Y
+ * @param i center pixel of surronding pixels to be checked
+ * @param j center pixel of surronding pixels to be checked
+ * @param config struct that holds threshold values. Set these high and low values to detect colors falling in that range. Ex: Green cbmin 0 cbmax 128 crmin 0 crmax 50
+ * @return returns the number of pixels that were within tolerance bounds, until the number of out of bounds colors exceeds num_not_green_max
+ */
 int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j, struct detect_config* config);
 
 extern int errno;
@@ -122,6 +130,7 @@ int main() {
         unsigned char cb, cr, y, y1;
         int i, j;
         int i_max, j_max, radius_max;
+        int temp_radius= 0;
         radius_max = 0;
         //Every 4th Row
         for(i = 0; i< 1080; i+=4){
@@ -131,12 +140,18 @@ int main() {
                 cb = CRCB_MASK & pixels[i*1920+j+1];
                 y = LUMA_MASK & pixels[i*1920+j];
                 y1 = LUMA_MASK & pixels[i*1920+j+1];
+                //First pixel debug
+                if(i == 0 && j == 210){
+                    printf("CRVAL: %x\tCBVAL: %x\tYVAL: %x\tY1VAL: %x\n", cr, cb, y, y1);
+                }
                 //Green pixel
                 if(cr < config->cr_threshold_high && cr > config->cr_threshold_low && cb < config->cb_threshold_high && cb > config->cb_threshold_low){
                     if(y < config->y_threshold_high && y > config->y_threshold_low){
-                        if(calc_largest_radius(frame_buffer_ptr, i, j, config) > radius_max){
+                        temp_radius = calc_largest_radius(frame_buffer_ptr, i, j, config)
+                        if( temp_radius > radius_max){
                             i_max = i;
                             j_max = j;
+                            radius_max = temp_radius;
                         }
                     }
                 }
@@ -300,7 +315,6 @@ int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j,
         offset++;
     }
     return num_green_pixels;
-
 }
 
 void display_config(struct detect_config* config){
