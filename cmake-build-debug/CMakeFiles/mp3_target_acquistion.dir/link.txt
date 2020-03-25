@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/mp3_target_acquistion.dir/main.c.o  -o mp3_target_acquistion 

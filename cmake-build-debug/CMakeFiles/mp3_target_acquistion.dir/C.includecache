@@ -1,0 +1,14 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/rmasl/Desktop/Evan_Personal_Use/Cpre488/Labs/mp3_target_acquistion/main.c
+stdio.h
+-
+stdlib.h
+-
+
