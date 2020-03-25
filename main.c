@@ -126,7 +126,6 @@ int main() {
         //Run Alg on one frame
         //Assuming Green target for now
         //Assuming pointer assignment is correct
-        unsigned short pixels[1920*1080];
         unsigned char cb, cr, y, y1;
         int i, j;
         int i_max, j_max, radius_max;
@@ -136,18 +135,16 @@ int main() {
         for(i = 0; i< 1080; i+=4){
             //Every 8th Col_ish
             for(j=210; j < 1920-210; j+=8){
-                cr = CRCB_MASK & pixels[i*1920+j];
-                cb = CRCB_MASK & pixels[i*1920+j+1];
-                y = LUMA_MASK & pixels[i*1920+j];
-                y1 = LUMA_MASK & pixels[i*1920+j+1];
-                //First pixel debug
-                if(i == 0 && j == 210){
-                    printf("CRVAL: %x\tCBVAL: %x\tYVAL: %x\tY1VAL: %x\n", cr, cb, y, y1);
-                }
+                cr = CRCB_MASK & frame_buffer_ptr[i*1920+j];
+                cb = CRCB_MASK & frame_buffer_ptr[i*1920+j+1];
+                y = LUMA_MASK & frame_buffer_ptr[i*1920+j];
+                y1 = LUMA_MASK & frame_buffer_ptr[i*1920+j+1];
+                //Pixel debug
+                printf("CRVAL: %x\tCBVAL: %x\tYVAL: %x\tY1VAL: %x\n", cr, cb, y, y1);
                 //Green pixel
                 if(cr < config->cr_threshold_high && cr > config->cr_threshold_low && cb < config->cb_threshold_high && cb > config->cb_threshold_low){
                     if(y < config->y_threshold_high && y > config->y_threshold_low){
-                        temp_radius = calc_largest_radius(frame_buffer_ptr, i, j, config)
+                        temp_radius = calc_largest_radius(frame_buffer_ptr, i, j, config);
                         if( temp_radius > radius_max){
                             i_max = i;
                             j_max = j;

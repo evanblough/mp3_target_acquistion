@@ -7,8 +7,14 @@
 #IncludeRegexTransform: 
 
 /home/rmasl/Desktop/Evan_Personal_Use/Cpre488/Labs/mp3_target_acquistion/main.c
+fcntl.h
+-
 stdio.h
 -
 stdlib.h
+-
+unistd.h
+-
+sys/mman.h
 -
 
