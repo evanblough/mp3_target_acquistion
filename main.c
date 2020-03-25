@@ -20,12 +20,24 @@
 #define SWITCHES_BASE_ADDR 	    0x41210000
 
 //Picture Values
-#define VDMA_FRAME_BUFFER       0x43000000 + 0x000000A0 + 0x0000000C
-#define THRESHOLD_HIGH            0xF0
-#define THRESHOLD_LOW             0x40
-#define MAX_NUM_NOT_GREEN         5
+#define VDMA_FRAME_BUFFER_INPUT       0x1ABB0000 /*0x43000000 + 0x000000A0 + 0x0000000C*/
 #define MEM_INTERFACE		"/dev/mem"
+#define CRCB_MASK 0xFF00
+#define LUMA_MASK 0x00FF
 
+struct detect_config {
+    unsigned char cb_threshold_low;
+    unsigned char cb_threshold_high;
+    unsigned char cr_threshold_low;
+    unsigned char cr_threshold_high;
+    unsigned char y_threshold_high;
+    unsigned char y_threshold_low;
+    int offset_max;
+    int num_not_green_max;
+};
+
+void display_config(struct detect_config* config);
+int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j, struct detect_config* config);
 
 extern int errno;
 static void launcher_cmd(int fd, int cmd) {
@@ -53,7 +65,7 @@ static void launcher_cmd(int fd, int cmd) {
 }
 
 int main() {
-    int mem_fd = open(MEM_INTERFACE, O_RDWR);
+    int mem_fd;
     int fd;
     int cmd = LAUNCHER_STOP;
     char *dev = LAUNCHER_NODE;
@@ -68,75 +80,230 @@ int main() {
         perror("Couldn't open file: %m");
         exit(1);
     }
-    volatile unsigned short* frame_buffer_ptr = (unsigned short*)mmap(NULL, 1920*1080, PROT_READ, MAP_SHARED, mem_fd, VDMA_FRAME_BUFFER);
+    volatile unsigned short* frame_buffer_ptr = (unsigned short*)mmap(NULL, 1920*1080*2, PROT_READ, MAP_SHARED, mem_fd, VDMA_FRAME_BUFFER_INPUT);
     if(frame_buffer_ptr == MAP_FAILED){
         printf("MMAP FAIL\n");
         return -1;
     }
-    //Assuming Green target for now
-    //Assuming pointer assignment is correct
-    unsigned short pixels[1920*1080];
-    unsigned char cb, cr, y;
-    int i, j;
-    int i_max, j_max, radius_max;
-    radius_max = 0;
-    //Every 4th Row
-    for(i = 0; i< 1080; i+=4){
-        //Every 8th Col_ish
-        for(j=0; j <1920; j+=8){
-            cr = 0xFF00 & pixels[i*1920+j];
-            cb = 0xFF00 & pixels[i*1920+j+1];
-            //Green pixel
-            if(cr < THRESHOLD_LOW && cb < THRESHOLD_LOW){
-                if(calc_largest_radius(frame_buffer_ptr, i, j) > radius_max){
-                    i_max = i;
-                    j_max = j;
+
+    printf("Hello, World!\n");
+    struct detect_config *config = malloc(sizeof(struct detect_config));
+    config->cb_threshold_high = 0;
+    config->cb_threshold_low = 0;
+    config->cr_threshold_high = 0;
+    config->cr_threshold_low = 0;
+    config->y_threshold_high = 0;
+    config->y_threshold_low = 0;
+    config->offset_max = 0;
+    config->num_not_green_max = 0;
+    size_t bytes;
+    int bytes_read = 0;
+    while(-1 != bytes_read) {
+        int a, b, c, d;
+        bytes_read = scanf("%d %d %d %d", &a, &b, &c, &d);
+        if(bytes_read == -1){
+            break;
+        }
+        config->cb_threshold_high = a;
+        config->cb_threshold_low = b;
+        config->cr_threshold_high = c;
+        config->cr_threshold_low = d;
+        bytes_read = scanf("%d %d %d %d", &a, &b, &config->offset_max, &config->num_not_green_max);
+        if(bytes_read == -1 || config->num_not_green_max == -1){
+            break;
+        }
+        config->y_threshold_high = a;
+        config->y_threshold_low = b;
+        display_config(config);
+        //Run Alg on one frame
+        //Assuming Green target for now
+        //Assuming pointer assignment is correct
+        unsigned short pixels[1920*1080];
+        unsigned char cb, cr, y, y1;
+        int i, j;
+        int i_max, j_max, radius_max;
+        radius_max = 0;
+        //Every 4th Row
+        for(i = 0; i< 1080; i+=4){
+            //Every 8th Col_ish
+            for(j=210; j < 1920-210; j+=8){
+                cr = CRCB_MASK & pixels[i*1920+j];
+                cb = CRCB_MASK & pixels[i*1920+j+1];
+                y = LUMA_MASK & pixels[i*1920+j];
+                y1 = LUMA_MASK & pixels[i*1920+j+1];
+                //Green pixel
+                if(cr < config->cr_threshold_high && cr > config->cr_threshold_low && cb < config->cb_threshold_high && cb > config->cb_threshold_low){
+                    if(y < config->y_threshold_high && y > config->y_threshold_low){
+                        if(calc_largest_radius(frame_buffer_ptr, i, j, config) > radius_max){
+                            i_max = i;
+                            j_max = j;
+                        }
+                    }
                 }
             }
         }
+        printf("Center is x: %d, y: %d\n", j_max, i_max);
+
     }
-    printf("Calculated center of target %d %d", i_max ,j_max);
     //Jmax and Imax should be center of target try to move in direction that moves imax and jmax to center j1920/2 + i1080/2
     close(fd);
-
     return EXIT_SUCCESS;
 }
 
-int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j){
+int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j, struct detect_config* config){
     int num_green_pixels = 0;
     int num_not_green = 0;
     int x,y;
     int offset = 1;
-    while (offset < 500){
+    while (offset < config->offset_max){
+        //Left and Right Columns
         for(y = i - offset; y <= i + offset; y++){
-            //If not green
-            if((frame_buffer_ptr[y*1920+j+offset] & 0xF0) > THRESHOLD_LOW){
-                num_not_green++;
+            int index1, index2;
+            index1 = y*1920+j+offset;
+            index2 = y*1920+j-offset;
+            //Valid bounds check;
+            if(index1 > 0 && index1 < 1920*1080){
+                //CB
+                if(index1 % 2){
+                    //If outside color bounds
+                    if((frame_buffer_ptr[index1] & CRCB_MASK) > config->cb_threshold_high || (frame_buffer_ptr[index1] & CRCB_MASK) < config->cb_threshold_low){
+                        num_not_green++;
+                    }
+                    //Y
+                    else if((frame_buffer_ptr[index1] & LUMA_MASK) > config->y_threshold_high || (frame_buffer_ptr[index1] & LUMA_MASK) < config->y_threshold_low){
+                        num_not_green++;
+                    }
+                    //Else count another green pixel
+                    else{
+                        num_green_pixels++;
+                    }
+                }
+                //CR
+                else{
+                    if((frame_buffer_ptr[index1] & CRCB_MASK) > config->cr_threshold_high || (frame_buffer_ptr[index1] & CRCB_MASK) < config->cr_threshold_low){
+                        num_not_green++;
+                    }
+                    //Y
+                    else if((frame_buffer_ptr[index1] & LUMA_MASK) > config->y_threshold_high || (frame_buffer_ptr[index1] & LUMA_MASK) < config->y_threshold_low){
+                        num_not_green++;
+                    }
+                    //Else count another green pixel
+                    else{
+                        num_green_pixels++;
+                    }
+                }
             }
-            else if((frame_buffer_ptr[y*1920+j-offset] & 0xF0) > THRESHOLD_LOW){
-                num_not_green++;
-            }
-            else{
-                num_green_pixels++;
+            if(index2 > 0 && index2 < 1920*1080){
+                //CB
+                if(index2 % 2){
+                    //If outside color bounds
+                    if((frame_buffer_ptr[index2] & CRCB_MASK) > config->cb_threshold_high || (frame_buffer_ptr[index2] & CRCB_MASK) < config->cb_threshold_low){
+                        num_not_green++;
+                    }
+                    //Y
+                    else if((frame_buffer_ptr[index2] & LUMA_MASK) > config->y_threshold_high || (frame_buffer_ptr[index2] & LUMA_MASK) < config->y_threshold_low){
+                        num_not_green++;
+                    }
+                    //Else count another green pixel
+                    else{
+                        num_green_pixels++;
+                    }
+                }
+                //CR
+                else{
+                    if((frame_buffer_ptr[index2] & CRCB_MASK) > config->cr_threshold_high || (frame_buffer_ptr[index2] & CRCB_MASK) < config->cr_threshold_low){
+                        num_not_green++;
+                    }
+                    //Y
+                    else if((frame_buffer_ptr[index2] & LUMA_MASK) > config->y_threshold_high || (frame_buffer_ptr[index2] & LUMA_MASK) < config->y_threshold_low){
+                        num_not_green++;
+                    }
+                    //Else count another green pixel
+                    else{
+                        num_green_pixels++;
+                    }
+                }
             }
         }
-        for(y = j-offset; y <= j + offset; y++){
-            //If not green
-            if((frame_buffer_ptr[y+(i+offset)*1920] & 0xF0) > THRESHOLD_LOW){
-                num_not_green++;
+        //Top and Bottom Row
+        for(x = j-offset; x <= j + offset; x++){
+            int index1, index2;
+            index1 = (i+offset)*1920+x;
+            index2 = (i-offset)*1920+x;
+            //Valid bounds check;
+            if(index1 > 0 && index1 < 1920*1080){
+                //CB
+                if(index1 % 2){
+                    //If outside color bounds
+                    if((frame_buffer_ptr[index1] & CRCB_MASK) > config->cb_threshold_high || (frame_buffer_ptr[index1] & CRCB_MASK) < config->cb_threshold_low){
+                        num_not_green++;
+                    }
+                    //Y
+                    else if((frame_buffer_ptr[index1] & LUMA_MASK) > config->y_threshold_high || (frame_buffer_ptr[index1] & LUMA_MASK) < config->y_threshold_low){
+                        num_not_green++;
+                    }
+                    //Else count another green pixel
+                    else{
+                        num_green_pixels++;
+                    }
+                }
+                //CR
+                else{
+                    if((frame_buffer_ptr[index1] & CRCB_MASK) > config->cr_threshold_high || (frame_buffer_ptr[index1] & CRCB_MASK) < config->cr_threshold_low){
+                        num_not_green++;
+                    }
+                    //Y
+                    else if((frame_buffer_ptr[index1] & LUMA_MASK) > config->y_threshold_high || (frame_buffer_ptr[index1] & LUMA_MASK) < config->y_threshold_low){
+                        num_not_green++;
+                    }
+                    //Else count another green pixel
+                    else{
+                        num_green_pixels++;
+                    }
+                }
             }
-            else if((frame_buffer_ptr[y+(j-offset)*1920] & 0xF0) > THRESHOLD_LOW){
-                num_not_green++;
-            }
-            else{
-                num_green_pixels++;
+            if(index2 > 0 && index2 < 1920*1080){
+                //CB
+                if(index2 % 2){
+                    //If outside color bounds
+                    if((frame_buffer_ptr[index2] & CRCB_MASK) > config->cb_threshold_high || (frame_buffer_ptr[index2] & CRCB_MASK) < config->cb_threshold_low){
+                        num_not_green++;
+                    }
+                    //Y
+                    else if((frame_buffer_ptr[index2] & LUMA_MASK) > config->y_threshold_high || (frame_buffer_ptr[index2] & LUMA_MASK) < config->y_threshold_low){
+                        num_not_green++;
+                    }
+                    //Else count another green pixel
+                    else{
+                        num_green_pixels++;
+                    }
+                }
+                //CR
+                else{
+                    if((frame_buffer_ptr[index2] & CRCB_MASK) > config->cr_threshold_high || (frame_buffer_ptr[index2] & CRCB_MASK) < config->cr_threshold_low){
+                        num_not_green++;
+                    }
+                    //Y
+                    else if((frame_buffer_ptr[index2] & LUMA_MASK) > config->y_threshold_high || (frame_buffer_ptr[index2] & LUMA_MASK) < config->y_threshold_low){
+                        num_not_green++;
+                    }
+                    //Else count another green pixel
+                    else{
+                        num_green_pixels++;
+                    }
+                }
             }
         }
-        if(num_not_green > MAX_NUM_NOT_GREEN){
+        if(num_not_green > config->num_not_green_max){
             return num_green_pixels;
         }
         offset++;
     }
     return num_green_pixels;
 
+}
+
+void display_config(struct detect_config* config){
+    printf("CBMAX: %d\tCBMIN: %d\tCRMAX: %d\t\tCRMIN: %d\n", config->cb_threshold_high, config->cb_threshold_low, config->cr_threshold_high, config->cr_threshold_low);
+    printf("YMAX: %d\tYMIN: %d\tOFF_MAX: %d\tNUM_!GREEN: %d\n", config->y_threshold_high, config->y_threshold_low, config->offset_max, config->num_not_green_max);
 }
