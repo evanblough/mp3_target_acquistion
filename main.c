@@ -105,7 +105,7 @@ int main() {
     config->offset_max = 0;
     config->num_not_green_max = 0;
     size_t bytes;
-    int i_max, j_max, radius_max, i, j;
+    int i_max, j_max, radius_max, i, j , i_examine, j_examine;
     i_max = 0;
     j_max = 0;
     radius_max = 0;
@@ -114,7 +114,7 @@ int main() {
         //Stop Config Phase
         if(config->num_not_green_max != -1){
             int a, b, c, d;
-            bytes_read = scanf("%d %d %d %d", &a, &b, &c, &d);
+            bytes_read = scanf("%d %d %d %d %d %d", &a, &b, &c, &d, &i_examine, &j_examine);
             if(bytes_read == -1){
                 break;
             }
@@ -147,16 +147,16 @@ int main() {
         int temp_radius= 0;
         radius_max = 0;
         //Every 4th Row
-        for(i = 0; i< 1080; i+=4){
+        for(i = 0; i< 1080; i+=2){
             //Every 8th Col_ish
-            for(j=210; j < 1920-210; j+=8){
+            for(j=210; j < 1920-210; j+=4){
                 cr = CRCB_MASK(frame_buffer_ptr[i*1920+j]);
                 cb = CRCB_MASK(frame_buffer_ptr[i*1920+j+1]);
                 y = LUMA_MASK & frame_buffer_ptr[i*1920+j];
                 y1 = LUMA_MASK & frame_buffer_ptr[i*1920+j+1];
                 //Pixel debug
-                if(i == 540){
-                    printf("CRVAL: %x\tCBVAL: %x\tYVAL: %x\tY1VAL: %x\n", cr, cb, y, y1);
+                if(i == i_examine && j == j_examine){
+                    printf("CRVAL: %d\tCBVAL: %d\tYVAL: %d\tY1VAL: %d\nX: %d, Y: %d\n", cr, cb, y, y1, i_examine, j_examine);
                 }
                 //Green pixel
                 if(cr < config->cr_threshold_high && cr > config->cr_threshold_low && cb < config->cb_threshold_high && cb > config->cb_threshold_low){
