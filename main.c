@@ -114,7 +114,7 @@ int main() {
         //Stop Config Phase
         if(config->num_not_green_max != -1){
             int a, b, c, d;
-            bytes_read = scanf("%d %d %d %d %d %d", &a, &b, &c, &d, &i_examine, &j_examine);
+            bytes_read = scanf("%d %d %d %d %d %d", &a, &b, &c, &d, &j_examine, &i_examine);
             if(bytes_read == -1){
                 break;
             }
@@ -155,8 +155,8 @@ int main() {
                 y = LUMA_MASK & frame_buffer_ptr[i*1920+j];
                 y1 = LUMA_MASK & frame_buffer_ptr[i*1920+j+1];
                 //Pixel debug
-                if(i == i_examine && j == j_examine){
-                    printf("CRVAL: %d\tCBVAL: %d\tYVAL: %d\tY1VAL: %d\nX: %d, Y: %d\n", cr, cb, y, y1, i_examine, j_examine);
+                if(i < i_examine + 2 && i > i_examine - 2 && j > j_examine -2 && j < j_examine +2){
+                    printf("CRVAL: %d\tCBVAL: %d\tYVAL: %d\tY1VAL: %d\nX: %d, Y: %d\n", cr, cb, y, y1, j_examine, i_examine);
                 }
                 //Green pixel
                 if(cr < config->cr_threshold_high && cr > config->cr_threshold_low && cb < config->cb_threshold_high && cb > config->cb_threshold_low){
