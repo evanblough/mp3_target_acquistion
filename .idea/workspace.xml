@@ -13,7 +13,6 @@
   <component name="ChangeListManager">
     <list default="true" id="882c355c-1767-4d94-bf7e-a7ffdae9ffb7" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/mp3_target_acquistion.dir/C.includecache" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/mp3_target_acquistion.dir/C.includecache" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/mp3_target_acquistion.dir/main.c.o" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/mp3_target_acquistion.dir/main.c.o" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/mp3_target_acquistion" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/mp3_target_acquistion" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/main.c" afterDir="false" />
@@ -81,7 +80,12 @@
       <workItem from="1585147823442" duration="160000" />
       <workItem from="1585149465517" duration="6453000" />
       <workItem from="1585158294484" duration="469000" />
-      <workItem from="1585162512528" duration="206000" />
+      <workItem from="1585162512528" duration="2653000" />
+      <workItem from="1585179230658" duration="246000" />
+      <workItem from="1585185265827" duration="568000" />
+      <workItem from="1585232542650" duration="557000" />
+      <workItem from="1585249987913" duration="108000" />
+      <workItem from="1585250147387" duration="891000" />
     </task>
     <servers />
   </component>

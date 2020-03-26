@@ -22,7 +22,7 @@
 //Picture Values
 #define VDMA_FRAME_BUFFER_INPUT       0x1ABB0000 /*0x43000000 + 0x000000A0 + 0x0000000C*/
 #define MEM_INTERFACE		"/dev/mem"
-#define CRCB_MASK 0xFF00
+#define CRCB_MASK(val) (char)((val & 0xFF00) >> 8)
 #define LUMA_MASK 0x00FF
 
 struct detect_config {
@@ -105,42 +105,59 @@ int main() {
     config->offset_max = 0;
     config->num_not_green_max = 0;
     size_t bytes;
+    int i_max, j_max, radius_max, i, j;
+    i_max = 0;
+    j_max = 0;
+    radius_max = 0;
     int bytes_read = 0;
     while(-1 != bytes_read) {
-        int a, b, c, d;
-        bytes_read = scanf("%d %d %d %d", &a, &b, &c, &d);
-        if(bytes_read == -1){
-            break;
+        //Stop Config Phase
+        if(config->num_not_green_max != -1){
+            int a, b, c, d;
+            bytes_read = scanf("%d %d %d %d", &a, &b, &c, &d);
+            if(bytes_read == -1){
+                break;
+            }
+            config->cb_threshold_high = a;
+            config->cb_threshold_low = b;
+            config->cr_threshold_high = c;
+            config->cr_threshold_low = d;
+            bytes_read = scanf("%d %d %d %d", &a, &b, &config->offset_max, &config->num_not_green_max);
+            if(bytes_read == -1){
+                break;
+            }
+            config->y_threshold_high = a;
+            config->y_threshold_low = b;
+            display_config(config);
         }
-        config->cb_threshold_high = a;
-        config->cb_threshold_low = b;
-        config->cr_threshold_high = c;
-        config->cr_threshold_low = d;
-        bytes_read = scanf("%d %d %d %d", &a, &b, &config->offset_max, &config->num_not_green_max);
-        if(bytes_read == -1 || config->num_not_green_max == -1){
-            break;
+        else{
+            for(i = i_max - 5; i < i_max + 5; i++){
+                for(j = j_max - 5; j<j_max+5; j++){
+                    if(i > 0 && i < 1080 && j > 0 && j < 1920){
+                        frame_buffer_ptr[i*1920+j] = 0xFF00;
+                    }
+                }
+            }
         }
-        config->y_threshold_high = a;
-        config->y_threshold_low = b;
-        display_config(config);
         //Run Alg on one frame
         //Assuming Green target for now
         //Assuming pointer assignment is correct
         unsigned char cb, cr, y, y1;
-        int i, j;
-        int i_max, j_max, radius_max;
+
         int temp_radius= 0;
         radius_max = 0;
         //Every 4th Row
         for(i = 0; i< 1080; i+=4){
             //Every 8th Col_ish
             for(j=210; j < 1920-210; j+=8){
-                cr = CRCB_MASK & frame_buffer_ptr[i*1920+j];
-                cb = CRCB_MASK & frame_buffer_ptr[i*1920+j+1];
+                cr = CRCB_MASK(frame_buffer_ptr[i*1920+j]);
+                cb = CRCB_MASK(frame_buffer_ptr[i*1920+j+1]);
                 y = LUMA_MASK & frame_buffer_ptr[i*1920+j];
                 y1 = LUMA_MASK & frame_buffer_ptr[i*1920+j+1];
                 //Pixel debug
-                printf("CRVAL: %x\tCBVAL: %x\tYVAL: %x\tY1VAL: %x\n", cr, cb, y, y1);
+                if(i == 540){
+                    printf("CRVAL: %x\tCBVAL: %x\tYVAL: %x\tY1VAL: %x\n", cr, cb, y, y1);
+                }
                 //Green pixel
                 if(cr < config->cr_threshold_high && cr > config->cr_threshold_low && cb < config->cb_threshold_high && cb > config->cb_threshold_low){
                     if(y < config->y_threshold_high && y > config->y_threshold_low){
@@ -155,7 +172,6 @@ int main() {
             }
         }
         printf("Center is x: %d, y: %d\n", j_max, i_max);
-
     }
     //Jmax and Imax should be center of target try to move in direction that moves imax and jmax to center j1920/2 + i1080/2
     close(fd);
@@ -178,7 +194,7 @@ int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j,
                 //CB
                 if(index1 % 2){
                     //If outside color bounds
-                    if((frame_buffer_ptr[index1] & CRCB_MASK) > config->cb_threshold_high || (frame_buffer_ptr[index1] & CRCB_MASK) < config->cb_threshold_low){
+                    if(CRCB_MASK(frame_buffer_ptr[index1]) > config->cb_threshold_high || CRCB_MASK(frame_buffer_ptr[index1]) < config->cb_threshold_low){
                         num_not_green++;
                     }
                     //Y
@@ -192,7 +208,7 @@ int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j,
                 }
                 //CR
                 else{
-                    if((frame_buffer_ptr[index1] & CRCB_MASK) > config->cr_threshold_high || (frame_buffer_ptr[index1] & CRCB_MASK) < config->cr_threshold_low){
+                    if(CRCB_MASK(frame_buffer_ptr[index1]) > config->cr_threshold_high || CRCB_MASK(frame_buffer_ptr[index1]) < config->cr_threshold_low){
                         num_not_green++;
                     }
                     //Y
@@ -209,7 +225,7 @@ int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j,
                 //CB
                 if(index2 % 2){
                     //If outside color bounds
-                    if((frame_buffer_ptr[index2] & CRCB_MASK) > config->cb_threshold_high || (frame_buffer_ptr[index2] & CRCB_MASK) < config->cb_threshold_low){
+                    if(CRCB_MASK(frame_buffer_ptr[index2]) > config->cb_threshold_high || CRCB_MASK(frame_buffer_ptr[index2]) < config->cb_threshold_low){
                         num_not_green++;
                     }
                     //Y
@@ -223,7 +239,7 @@ int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j,
                 }
                 //CR
                 else{
-                    if((frame_buffer_ptr[index2] & CRCB_MASK) > config->cr_threshold_high || (frame_buffer_ptr[index2] & CRCB_MASK) < config->cr_threshold_low){
+                    if(CRCB_MASK(frame_buffer_ptr[index2]) > config->cr_threshold_high || CRCB_MASK(frame_buffer_ptr[index2]) < config->cr_threshold_low){
                         num_not_green++;
                     }
                     //Y
@@ -247,7 +263,7 @@ int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j,
                 //CB
                 if(index1 % 2){
                     //If outside color bounds
-                    if((frame_buffer_ptr[index1] & CRCB_MASK) > config->cb_threshold_high || (frame_buffer_ptr[index1] & CRCB_MASK) < config->cb_threshold_low){
+                    if(CRCB_MASK(frame_buffer_ptr[index1]) > config->cb_threshold_high || CRCB_MASK(frame_buffer_ptr[index1]) < config->cb_threshold_low){
                         num_not_green++;
                     }
                     //Y
@@ -261,7 +277,7 @@ int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j,
                 }
                 //CR
                 else{
-                    if((frame_buffer_ptr[index1] & CRCB_MASK) > config->cr_threshold_high || (frame_buffer_ptr[index1] & CRCB_MASK) < config->cr_threshold_low){
+                    if(CRCB_MASK(frame_buffer_ptr[index1]) > config->cr_threshold_high || CRCB_MASK(frame_buffer_ptr[index1]) < config->cr_threshold_low){
                         num_not_green++;
                     }
                     //Y
@@ -278,7 +294,7 @@ int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j,
                 //CB
                 if(index2 % 2){
                     //If outside color bounds
-                    if((frame_buffer_ptr[index2] & CRCB_MASK) > config->cb_threshold_high || (frame_buffer_ptr[index2] & CRCB_MASK) < config->cb_threshold_low){
+                    if(CRCB_MASK(frame_buffer_ptr[index2]) > config->cb_threshold_high || CRCB_MASK(frame_buffer_ptr[index2]) < config->cb_threshold_low){
                         num_not_green++;
                     }
                     //Y
@@ -292,7 +308,7 @@ int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j,
                 }
                 //CR
                 else{
-                    if((frame_buffer_ptr[index2] & CRCB_MASK) > config->cr_threshold_high || (frame_buffer_ptr[index2] & CRCB_MASK) < config->cr_threshold_low){
+                    if(CRCB_MASK(frame_buffer_ptr[index2]) > config->cr_threshold_high || CRCB_MASK(frame_buffer_ptr[index2]) < config->cr_threshold_low){
                         num_not_green++;
                     }
                     //Y
