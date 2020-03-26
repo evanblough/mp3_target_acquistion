@@ -22,7 +22,7 @@
 //Picture Values
 #define VDMA_FRAME_BUFFER_INPUT       0x1ABB0000 /*0x43000000 + 0x000000A0 + 0x0000000C*/
 #define MEM_INTERFACE		"/dev/mem"
-#define CRCB_MASK(val) (char)((val & 0xFF00) >> 8)
+#define CRCB_MASK(val) (unsigned char)((val & 0xFF00) >> 8)
 #define LUMA_MASK 0x00FF
 
 struct detect_config {
@@ -147,9 +147,9 @@ int main() {
         int temp_radius= 0;
         radius_max = 0;
         //Every 4th Row
-        for(i = 0; i< 1080; i+=2){
+        for(i = 0; i< 1080; i++){
             //Every 8th Col_ish
-            for(j=210; j < 1920-210; j+=4){
+            for(j=210; j < 1920-210; j+=2){
                 cr = CRCB_MASK(frame_buffer_ptr[i*1920+j]);
                 cb = CRCB_MASK(frame_buffer_ptr[i*1920+j+1]);
                 y = LUMA_MASK & frame_buffer_ptr[i*1920+j];
