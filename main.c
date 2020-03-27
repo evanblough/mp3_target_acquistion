@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include "string.h"
 
 //Launcher Values
 #define LAUNCHER_NODE           "/dev/launcher0"
@@ -47,6 +48,8 @@ void display_config(struct detect_config* config);
  */
 int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j, struct detect_config* config);
 
+void log_frame(volatile unsigned char* frame_buffer);
+
 extern int errno;
 static void launcher_cmd(int fd, int cmd) {
     int retval = 0;
@@ -72,7 +75,7 @@ static void launcher_cmd(int fd, int cmd) {
     return;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     int mem_fd;
     int fd;
     int cmd = LAUNCHER_STOP;
@@ -93,7 +96,10 @@ int main() {
         printf("MMAP FAIL\n");
         return -1;
     }
-
+    //Verbose print pixel values
+    if(argc == 2 && strncmp("-v", argv[1], 2) == 0){
+        log_frame(frame_buffer_ptr);
+    }
     printf("Hello, World!\n");
     struct detect_config *config = malloc(sizeof(struct detect_config));
     config->cb_threshold_high = 0;
@@ -105,7 +111,7 @@ int main() {
     config->offset_max = 0;
     config->num_not_green_max = 0;
     size_t bytes;
-    int i_max, j_max, radius_max, i, j , i_examine, j_examine;
+    int i_max, j_max, radius_max, i, j;
     i_max = 0;
     j_max = 0;
     radius_max = 0;
@@ -114,7 +120,7 @@ int main() {
         //Stop Config Phase
         if(config->num_not_green_max != -1){
             int a, b, c, d;
-            bytes_read = scanf("%d %d %d %d %d %d", &a, &b, &c, &d, &j_examine, &i_examine);
+            bytes_read = scanf("%d %d %d %d %d %d", &a, &b, &c, &d);
             if(bytes_read == -1){
                 break;
             }
@@ -153,11 +159,6 @@ int main() {
                 cr = CRCB_MASK(frame_buffer_ptr[i*1920+j]);
                 cb = CRCB_MASK(frame_buffer_ptr[i*1920+j+1]);
                 y = LUMA_MASK & frame_buffer_ptr[i*1920+j];
-                y1 = LUMA_MASK & frame_buffer_ptr[i*1920+j+1];
-                //Pixel debug
-                if(i < i_examine + 2 && i > i_examine - 2 && j > j_examine -2 && j < j_examine +2){
-                    printf("CRVAL: %d\tCBVAL: %d\tYVAL: %d\tY1VAL: %d\nX: %d, Y: %d\n", cr, cb, y, y1, j_examine, i_examine);
-                }
                 //Green pixel
                 if(cr < config->cr_threshold_high && cr > config->cr_threshold_low && cb < config->cb_threshold_high && cb > config->cb_threshold_low){
                     if(y < config->y_threshold_high && y > config->y_threshold_low){
@@ -333,4 +334,53 @@ int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j,
 void display_config(struct detect_config* config){
     printf("CBMAX: %d\tCBMIN: %d\tCRMAX: %d\t\tCRMIN: %d\n", config->cb_threshold_high, config->cb_threshold_low, config->cr_threshold_high, config->cr_threshold_low);
     printf("YMAX: %d\tYMIN: %d\tOFF_MAX: %d\tNUM_!GREEN: %d\n", config->y_threshold_high, config->y_threshold_low, config->offset_max, config->num_not_green_max);
+}
+
+void log_frame(volatile unsigned char* frame_buffer){
+    FILE* cr_csv;
+    FILE* cb_csv;
+    FILE* y_csv;
+
+    cr_csv = fopen("cr.csv", "w");
+    cb_csv = fopen("cb.csv", "w");
+    y_csv = fopen("y.csv", "w");
+
+    int i, j;
+    for(i = 0; i < 1080; i++){
+        for(j = 0; j < 1920; j++){
+            //Y
+            if(i == 1079 && j == 1919){
+                fprintf(y_csv,"%d", LUMA_MASK & frame_buffer[i*1920+j]);
+            }
+            else{
+                fprintf(y_csv,"%d,", LUMA_MASK & frame_buffer[i*1920+j]);
+            }
+            //CB
+            if(j % 2){
+                if(i == 1079 && j == 1919){
+                    fprintf(cb_csv,"%d,%d", CRCB_MASK(frame_buffer[i*1920+j]), CRCB_MASK(frame_buffer[i*1920+j]));
+                }
+                else{
+                    fprintf(cb_csv,"%d,%d,", CRCB_MASK(frame_buffer[i*1920+j]), CRCB_MASK(frame_buffer[i*1920+j]));
+                }
+            }
+            //CR
+            else {
+                if (j == 1918) {
+                    fprintf(cr_csv, "%d,%d", CRCB_MASK(frame_buffer[i * 1920 + j]),
+                            CRCB_MASK(frame_buffer[i * 1920 + j]));
+                } else {
+                    fprintf(cr_csv, "%d,%d,", CRCB_MASK(frame_buffer[i * 1920 + j]),
+                            CRCB_MASK(frame_buffer[i * 1920 + j]));
+                }
+            }
+        }
+        fprintf(cr_csv, "\n");
+        fprintf(cb_csv, "\n");
+        fprintf(y_csv, "\n");
+    }
+    fclose(cb_csv);
+    fclose(cr_csv);
+    fclose(y_csv);
+
 }
