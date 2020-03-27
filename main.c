@@ -48,7 +48,7 @@ void display_config(struct detect_config* config);
  */
 int calc_largest_radius(volatile unsigned short* frame_buffer_ptr, int i, int j, struct detect_config* config);
 
-void log_frame(volatile unsigned char* frame_buffer);
+void log_frame(volatile unsigned short* frame_buffer);
 
 extern int errno;
 static void launcher_cmd(int fd, int cmd) {
@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
         //Run Alg on one frame
         //Assuming Green target for now
         //Assuming pointer assignment is correct
-        unsigned char cb, cr, y, y1;
+        unsigned char cb, cr, y;
 
         int temp_radius= 0;
         radius_max = 0;
@@ -336,7 +336,7 @@ void display_config(struct detect_config* config){
     printf("YMAX: %d\tYMIN: %d\tOFF_MAX: %d\tNUM_!GREEN: %d\n", config->y_threshold_high, config->y_threshold_low, config->offset_max, config->num_not_green_max);
 }
 
-void log_frame(volatile unsigned char* frame_buffer){
+void log_frame(volatile unsigned short* frame_buffer){
     FILE* cr_csv;
     FILE* cb_csv;
     FILE* y_csv;
