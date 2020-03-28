@@ -100,6 +100,17 @@ int main(int argc, char* argv[]) {
     if(argc == 2 && strncmp("-v", argv[1], 2) == 0){
         log_frame(frame_buffer_ptr);
     }
+    //Test Log frame function
+    if(argc == 2 && strncmp("-t", argv[1], 2) == 0){
+        frame_buffer_ptr = malloc(1920*1080*2);
+        int m, n;
+        for(m = 0; m < 1080; m++){
+            for(n = 0; n < 1920; n++){
+                frame_buffer_ptr[m*1920+n] = (unsigned short)(m*1920+n % 65535);
+            }
+        }
+        log_frame(frame_buffer_ptr);
+    }
     printf("Hello, World!\n");
     struct detect_config *config = malloc(sizeof(struct detect_config));
     config->cb_threshold_high = 0;
@@ -120,7 +131,7 @@ int main(int argc, char* argv[]) {
         //Stop Config Phase
         if(config->num_not_green_max != -1){
             int a, b, c, d;
-            bytes_read = scanf("%d %d %d %d %d %d", &a, &b, &c, &d);
+            bytes_read = scanf("%d %d %d %d", &a, &b, &c, &d);
             if(bytes_read == -1){
                 break;
             }
