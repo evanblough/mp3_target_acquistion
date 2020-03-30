@@ -13,7 +13,6 @@
   <component name="ChangeListManager">
     <list default="true" id="882c355c-1767-4d94-bf7e-a7ffdae9ffb7" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/mp3_target_acquistion.dir/C.includecache" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/mp3_target_acquistion.dir/C.includecache" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/mp3_target_acquistion.dir/main.c.o" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/mp3_target_acquistion.dir/main.c.o" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/mp3_target_acquistion" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/mp3_target_acquistion" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/main.c" afterDir="false" />
@@ -49,7 +48,7 @@
     </option>
   </component>
   <component name="RunManager">
-    <configuration name="mp3_target_acquistion" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="mp3_target_acquistion" TARGET_NAME="mp3_target_acquistion" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="mp3_target_acquistion" RUN_TARGET_NAME="mp3_target_acquistion">
+    <configuration name="mp3_target_acquistion" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="-t" PASS_PARENT_ENVS_2="true" PROJECT_NAME="mp3_target_acquistion" TARGET_NAME="mp3_target_acquistion" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="mp3_target_acquistion" RUN_TARGET_NAME="mp3_target_acquistion">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -95,7 +94,9 @@
       <workItem from="1585350384451" duration="997000" />
       <workItem from="1585351424257" duration="924000" />
       <workItem from="1585353464722" duration="1833000" />
-      <workItem from="1585365237775" duration="481000" />
+      <workItem from="1585365237775" duration="1144000" />
+      <workItem from="1585591179255" duration="47000" />
+      <workItem from="1585608685542" duration="342000" />
     </task>
     <servers />
   </component>

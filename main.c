@@ -21,7 +21,6 @@
 #define SWITCHES_BASE_ADDR 	    0x41210000
 
 //Picture Values
-#define VDMA_FRAME_BUFFER_INPUT       0x1ABB0000 /*0x43000000 + 0x000000A0 + 0x0000000C*/
 #define MEM_INTERFACE		"/dev/mem"
 #define CRCB_MASK(val) (unsigned char)((val & 0xFF00) >> 8)
 #define LUMA_MASK 0x00FF
@@ -91,7 +90,10 @@ int main(int argc, char* argv[]) {
         perror("Couldn't open file: %m");
         exit(1);
     }
-    volatile unsigned short* frame_buffer_ptr = (unsigned short*)mmap(NULL, 1920*1080*2, PROT_READ, MAP_SHARED, mem_fd, VDMA_FRAME_BUFFER_INPUT);
+    unsigned vdma_addr;
+    scanf("%x", &vdma_addr);
+    printf("VDMA addr is %x\n");
+    volatile unsigned short* frame_buffer_ptr = (unsigned short*)mmap(NULL, 1920*1080*2, PROT_READ, MAP_SHARED, mem_fd, vdma_addr);
     if(frame_buffer_ptr == MAP_FAILED){
         printf("MMAP FAIL\n");
         return -1;
