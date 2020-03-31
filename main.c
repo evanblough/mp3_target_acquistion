@@ -90,10 +90,10 @@ int main(int argc, char* argv[]) {
         perror("Couldn't open file: %m");
         exit(1);
     }
-    unsigned vdma_addr;
+    int vdma_addr;
     scanf("%x", &vdma_addr);
-    printf("VDMA addr is %x\n");
-    volatile unsigned short* frame_buffer_ptr = (unsigned short*)mmap(NULL, 1920*1080*2, PROT_READ, MAP_SHARED, mem_fd, vdma_addr);
+    printf("VDMA addr is %x\n", vdma_addr);
+    volatile unsigned short* frame_buffer_ptr = (unsigned short*)mmap(NULL, 1920*1080*2, PROT_READ, MAP_SHARED, mem_fd, (off_t )vdma_addr);
     if(frame_buffer_ptr == MAP_FAILED){
         printf("MMAP FAIL\n");
         return -1;
