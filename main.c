@@ -197,11 +197,13 @@ int main(int argc, char *argv[]) {
         }
         printf("Center is x: %d, y: %d\n", j_max, i_max);
         if (argc == 2 && strncmp("-display", argv[1], 8) == 0) {
-            display_active_map(config, out_buffer_ptr, frame_buffer_ptr);
-            for (i = i_max - 5; i < i_max + 5; i++) {
-                for (j = j_max - 5; j < j_max + 5; j++) {
-                    if (i > 0 && i < 1080 && j > 0 && j < 1920) {
-                        out_buffer_ptr[i * 1920 + j] = 0x00FF;
+            for(;;){
+                display_active_map(config, out_buffer_ptr, frame_buffer_ptr);
+                for (i = i_max - 5; i < i_max + 5; i++) {
+                    for (j = j_max - 5; j < j_max + 5; j++) {
+                        if (i > 0 && i < 1080 && j > 0 && j < 1920) {
+                            out_buffer_ptr[i * 1920 + j] = 0x00FF;
+                        }
                     }
                 }
             }
