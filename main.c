@@ -22,8 +22,8 @@
 
 //Picture Values
 #define MEM_INTERFACE        "/dev/mem"
-#define CRCB_MASK(val) (unsigned char)((val & 0xFF00) >> 8)
-#define LUMA_MASK 0x00FF
+#define CRCB_MASK(val) ((unsigned char)((val & 0xFF00) >> 8))
+#define LUMA_MASK ((unsigned short) 0x00FF)
 
 struct detect_config {
     unsigned char cb_threshold_low;
@@ -197,17 +197,30 @@ int main(int argc, char *argv[]) {
         }
         printf("Center is x: %d, y: %d\n", j_max, i_max);
         if (argc == 2 && strncmp("-display", argv[1], 8) == 0) {
-            for(;;){
-                display_active_map(config, out_buffer_ptr, frame_buffer_ptr);
-                for (i = i_max - 5; i < i_max + 5; i++) {
-                    for (j = j_max - 5; j < j_max + 5; j++) {
-                        if (i > 0 && i < 1080 && j > 0 && j < 1920) {
-                            out_buffer_ptr[i * 1920 + j] = 0x00FF;
+
+            printf("Input center to examine: x, y, channel");
+            scanf("%d %d %d", &a, &b, &c);
+            unsigned char pixel[3];
+            for (i = b - 4; i < b + 4; i++) {
+                for (j = a - 4; j < a + 4; j++) {
+                    if (i > 0 && i < 1080 && j > 0 && j < 1920) {
+                        if (j % 2) {
+                            pixel[0] = CRCB_MASK(frame_buffer_ptr[i * 1920 + j]);
+                        } else {
+                            pixel[1] = CRCB_MASK(frame_buffer_ptr[i * 1920 + j]);
                         }
+                        pixel[2] = LUMA_MASK & frame_buffer_ptr[i * 1920 + j];
+                        if (j == a + 4) {
+                            printf("%d\n", pixel[c]);
+                        } else {
+                            printf("%d, ", pixel[c]);
+                        }
+
                     }
                 }
             }
         }
+
     }
     //Jmax and Imax should be center of target try to move in direction that moves imax and jmax to center j1920/2 + i1080/2
     close(fd);
@@ -397,8 +410,8 @@ void log_frame(volatile unsigned short *frame_buffer) {
     char cb_name[8] = "cb0.csv";
     char y_name[8] = "cb0.csv";
     int i, j;
-    for(i = 0; i < 4; i++){
-        cr_name[2]  = i + '0';
+    for (i = 0; i < 4; i++) {
+        cr_name[2] = i + '0';
         cb_name[2] = i + '0';
         y_name[2] = i + '0';
         cr_csv[i] = fopen(cr_name, "w");
@@ -408,7 +421,7 @@ void log_frame(volatile unsigned short *frame_buffer) {
     int k;
     for (i = 0; i < 1080; i++) {
         for (j = 0; j < 1920; j++) {
-            k = i*4 / 1080;
+            k = i * 4 / 1080;
             //Y
             if (i == 1079 && j == 1919) {
                 fprintf(y_csv[k], "%d", LUMA_MASK & frame_buffer[i * 1920 + j]);
@@ -440,7 +453,7 @@ void log_frame(volatile unsigned short *frame_buffer) {
         fprintf(cb_csv[k], "\n");
         fprintf(y_csv[k], "\n");
     }
-    for(i = 0; i < 4; i++){
+    for (i = 0; i < 4; i++) {
         fclose(cr_csv[i]);
         fclose(cb_csv[i]);
         fclose(y_csv[i]);
