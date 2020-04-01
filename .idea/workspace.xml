@@ -13,6 +13,7 @@
   <component name="ChangeListManager">
     <list default="true" id="882c355c-1767-4d94-bf7e-a7ffdae9ffb7" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/mp3_target_acquistion" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/mp3_target_acquistion" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/main.c" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -96,7 +97,11 @@
       <workItem from="1585591179255" duration="47000" />
       <workItem from="1585608685542" duration="2241000" />
       <workItem from="1585616106495" duration="254000" />
-      <workItem from="1585627867068" duration="630000" />
+      <workItem from="1585627867068" duration="1833000" />
+      <workItem from="1585703646504" duration="97000" />
+      <workItem from="1585707899525" duration="10000" />
+      <workItem from="1585750881413" duration="1309000" />
+      <workItem from="1585752336951" duration="497000" />
     </task>
     <servers />
   </component>

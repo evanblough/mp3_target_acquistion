@@ -390,54 +390,61 @@ void display_config(struct detect_config *config) {
 }
 
 void log_frame(volatile unsigned short *frame_buffer) {
-    FILE *cr_csv;
-    FILE *cb_csv;
-    FILE *y_csv;
-
-    cr_csv = fopen("cr.csv", "w");
-    cb_csv = fopen("cb.csv", "w");
-    y_csv = fopen("y.csv", "w");
-
+    FILE *cr_csv[4];
+    FILE *cb_csv[4];
+    FILE *y_csv[4];
+    char cr_name[8] = "cr0.csv";
+    char cb_name[8] = "cb0.csv";
+    char y_name[8] = "cb0.csv";
     int i, j;
+    for(i = 0; i < 4; i++){
+        cr_name[2]  = i + '0';
+        cb_name[2] = i + '0';
+        y_name[2] = i + '0';
+        cr_csv[i] = fopen(cr_name, "w");
+        cb_csv[i] = fopen(cb_name, "w");
+        y_csv[i] = fopen(y_name, "w");
+    }
+    int k;
     for (i = 0; i < 1080; i++) {
         for (j = 0; j < 1920; j++) {
+            k = i*4 / 1080;
             //Y
             if (i == 1079 && j == 1919) {
-                fprintf(y_csv, "%d", LUMA_MASK & frame_buffer[i * 1920 + j]);
+                fprintf(y_csv[k], "%d", LUMA_MASK & frame_buffer[i * 1920 + j]);
             } else {
-                fprintf(y_csv, "%d,", LUMA_MASK & frame_buffer[i * 1920 + j]);
+                fprintf(y_csv[k], "%d,", LUMA_MASK & frame_buffer[i * 1920 + j]);
             }
             //CB
             if (j % 2) {
                 if (i == 1079 && j == 1919) {
-                    fprintf(cb_csv, "%d,%d", CRCB_MASK(frame_buffer[i * 1920 + j]),
+                    fprintf(cb_csv[k], "%d,%d", CRCB_MASK(frame_buffer[i * 1920 + j]),
                             CRCB_MASK(frame_buffer[i * 1920 + j]));
                 } else {
-                    fprintf(cb_csv, "%d,%d,", CRCB_MASK(frame_buffer[i * 1920 + j]),
+                    fprintf(cb_csv[k], "%d,%d,", CRCB_MASK(frame_buffer[i * 1920 + j]),
                             CRCB_MASK(frame_buffer[i * 1920 + j]));
                 }
             }
                 //CR
             else {
                 if (j == 1918) {
-                    fprintf(cr_csv, "%d,%d", CRCB_MASK(frame_buffer[i * 1920 + j]),
+                    fprintf(cr_csv[k], "%d,%d", CRCB_MASK(frame_buffer[i * 1920 + j]),
                             CRCB_MASK(frame_buffer[i * 1920 + j]));
                 } else {
-                    fprintf(cr_csv, "%d,%d,", CRCB_MASK(frame_buffer[i * 1920 + j]),
+                    fprintf(cr_csv[k], "%d,%d,", CRCB_MASK(frame_buffer[i * 1920 + j]),
                             CRCB_MASK(frame_buffer[i * 1920 + j]));
                 }
             }
         }
-        fflush(cr_csv);
-        fflush(cb_csv);
-        fflush(y_csv);
-        fprintf(cr_csv, "\n");
-        fprintf(cb_csv, "\n");
-        fprintf(y_csv, "\n");
+        fprintf(cr_csv[k], "\n");
+        fprintf(cb_csv[k], "\n");
+        fprintf(y_csv[k], "\n");
     }
-    fclose(cb_csv);
-    fclose(cr_csv);
-    fclose(y_csv);
+    for(i = 0; i < 4; i++){
+        fclose(cr_csv[i]);
+        fclose(cb_csv[i]);
+        fclose(y_csv[i]);
+    }
 
 }
 
